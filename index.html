@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>WAR!!!</title>
+		<style type="text/css">
+			.card { width: 60px; height: 100px; border: 1px solid black; border-radius: 5px; margin: 4px; text-align:left; padding-left: 4px; float: left;}
+			#CWar, #PWar { width: 210px; margin: 0px auto; clear: both; }
+			#CWar > .card, #PWar > .card {margin: 4px 2px;}
+			#PWar > .card:hover { background-color: #555;}
+			#MainCards { width: 148px; margin: 0px auto;}
+			#ComputerCard { background-color: #EEE; }
+		</style>
+		<script type="text/javascript">
+			var mainDeck = [];
+			var cDeck = [];
+			var pDeck = [];
+			var state = 0;
+			var compWarPick = 0;
+			var playerWarPick = 0;
+			var numWar = 0;
+
+			//Card Class constructor
+			function Card(suit, value, face) {
+				//Properies
+				this.suit  = suit;
+				this.value = value;
+				this.face  = face;
+			}
+
+			function newCard(suit, value) {
+				var face = "";
+				var tempSuit = "";
+				var tempValue = 0;
+				switch (value) {
+					case 1:
+						face = "A";
+						break;
+					case 11:
+						face = "J";
+						break;
+					case 12:
+						face = "Q";
+						break;
+					case 13:
+						face = "K";
+						break;
+					default:
+						face = value;
+				}
+				switch (suit) {
+					case 0:
+						tempSuit = "&spades;"
+						break;
+					case 1:
+						tempSuit = "&clubs;"
+						break;
+					case 2:
+						tempSuit = "&diams;"
+						break;
+					case 3:
+						tempSuit = "&hearts;"
+						break;
+				}
+				if (value == 1) {
+					tempValue = 14;
+				} else {
+					tempValue = value;
+				}
+				var card = new Card(tempSuit, tempValue, face);
+				return card;
+			}
+
+			function shuffle(array) {
+			  	var currentIndex = array.length, temporaryValue, randomIndex ;
+			  	// While there remain elements to shuffle...
+			  	while (0 !== currentIndex) {
+			    	// Pick a remaining element...
+			    	randomIndex = Math.floor(Math.random() * currentIndex);
+			    	currentIndex -= 1;
+			    	// And swap it with the current element.
+			    	temporaryValue = array[currentIndex];
+			    	array[currentIndex] = array[randomIndex];
+			    	array[randomIndex] = temporaryValue;
+			  	}
+			  	return array;
+			}
+
+			function deal(mainDeck) {
+				for (var i = mainDeck.length - 1; mainDeck.length != 0; i--) {
+					if (i % 2 == 0) {
+						pDeck.push(mainDeck.pop());
+					} else {
+						cDeck.push(mainDeck.pop());
+					}
+				};
+			}
+
+			//Function to write data to an element
+			function write(element, content) {
+				document.getElementById(element).innerHTML = content;
+			}
+
+			//function to insert element into an array at a specific index
+			Array.prototype.insert = function (index, item) {
+				this.splice(index, 0, item);
+			};
+
+			//This function resets all the values that are printed to the screen
+			function resetValues() {
+				write("CCardValue", "");
+				write("CCardSuit", "");
+				write("CDeckSize", cDeck.length);
+				write("PDeckSize", pDeck.length);
+				write("PCardValue", "");
+				write("PCardSuit", "");
+				write("PStatus", "");
+				write("CStatus", "");
+			}
+
+			//This function cleans up all the extra cards on the screen
+			function cleanWar() {
+				var child = document.getElementById("CWar");
+				child.parentNode.removeChild(child);
+				var child = document.getElementById("PWar");
+				child.parentNode.removeChild(child);
+			}
+
+			//This function adds a new level of war to the table
+			function addWar(warLevel) {
+				var num = warLevel * 3 + 1;
+				var cwar = document.createElement("div");
+				cwar.id = "CWar";
+				var pwar = document.createElement("div");
+				pwar.id = "PWar";
+				var element = document.getElementById("Main");
+				var before = document.getElementById("MainCards");
+				element.insertBefore(cwar, before);
+				var before = document.getElementById("PlayerDiv");
+				element.insertBefore(pwar, before);
+
+				for (var i = 0; i < 3; i++) { //add cards to CWar div
+					var card = document.createElement("div");// create card
+					card.className = "card"; //add card's class and ID
+					card.id = "CWarCard" + (num + i);
+					var stuff = document.createElement("div"); //create container div
+					card.appendChild(stuff);
+					var cardVal = document.createElement("span");
+					cardVal.id = "CCardValue" + (num + i);
+					stuff.appendChild(cardVal);
+					var cardSuit = document.createElement("span");
+					cardSuit.id = "CCardSuit" + (num + i);
+					stuff.appendChild(cardSuit);
+					var cardStat = document.createElement("div");
+					cardStat.id = "CStatus" + (num + i);
+					stuff.appendChild(cardStat);
+					var element = document.getElementById("CWar");
+					var firstChild = element.firstElementChild;
+					element.insertBefore(card, firstChild);
+				};
+
+				for (var i = 0; i < 3; i++) { //add cards to PWar div
+					var card = document.createElement("div");
+					card.className = "card";
+					card.id = "PWarCard" + (num + i);
+					var stuff = document.createElement("div");
+					stuff.id = "stuff"
+					var cardVal = document.createElement("span");
+					cardVal.id = "PCardValue" + (num + i);
+					var cardSuit = document.createElement("span");
+					cardSuit.id = "PCardSuit" + (num + i);
+					var cardStat = document.createElement("div");
+					cardStat.id = "PStatus" + (num + i);
+					stuff.appendChild(cardVal);
+					stuff.appendChild(cardSuit);
+					stuff.appendChild(cardStat);
+					card.appendChild(stuff);
+					var element = document.getElementById("PWar");
+					element.appendChild(card);
+				};
+
+				for (var i = 0; i < 3; i++) {
+					document.getElementById("PWarCard" + (num + i)).setAttribute('onclick', 'war(' + (num + i) + ')');
+				};
+
+				document.getElementById("PlayButton").onclick = null;
+				document.getElementById("PlayButton").style.color = "#999";
+				numWar++;
+			}
+
+			function play() {
+				switch (state) {
+					case 0: // computer plays card
+						write("CCardValue", cDeck[cDeck.length - 1].face);
+						write("CCardSuit", cDeck[cDeck.length - 1].suit);
+						write("CDeckSize", cDeck.length - 1);
+						write("PDeckSize", pDeck.length);
+						write("PlayButton", "Play Card");
+						state = 1;
+						break;
+					case 1: // player plays card
+						write("PCardValue", pDeck[pDeck.length - 1].face);
+						write("PCardSuit", pDeck[pDeck.length - 1].suit);
+						write("PDeckSize", pDeck.length - 1);
+						write("PlayButton", "Next");
+						state = 2;
+						break;
+					case 2: // check winner
+						if (cDeck[cDeck.length - 1].value > pDeck[pDeck.length - 1].value) {
+							write("CStatus", "Win");
+							write("PStatus", "Lose");
+							state = 3;
+						} else if (pDeck[pDeck.length - 1].value > cDeck[cDeck.length - 1].value) {
+							write("CStatus", "Lose");
+							write("PStatus", "Win");
+							state = 4;
+						} else {
+							write("CStatus", "WAR!!!");
+							write("PStatus", "WAR!!!");
+							state = 5;
+						}
+						break;
+					case 3: //Computer Battle Win
+						cDeck.insert(0, cDeck.pop());
+						cDeck.insert(0, pDeck.pop());
+						resetValues();
+						state = 0;
+						break;
+					case 4: //Player Battle Win
+						pDeck.insert(0, pDeck.pop());
+						pDeck.insert(0, cDeck.pop());
+						resetValues();
+						state = 0;
+						break;
+					case 5: //WAR!!!
+						addWar(numWar);
+						write("CDeckSize", cDeck.length - (1 + numWar * 3));
+						write("PDeckSize", pDeck.length - (1 + numWar * 3));
+						break;
+					case 6: // computer chooses war card
+						var max = numWar * 3;
+						var min = max - 2;
+						var rand = Math.floor((Math.random() * max) + 1);
+						if (rand < min) {
+							play();
+						}
+						write("CCardValue" + rand, cDeck[cDeck.length - (1 + rand)].face);
+						write("CCardSuit" + rand, cDeck[cDeck.length - (1 + rand)].suit);
+						compWarPick = rand;
+						document.getElementById("PlayButton").onclick = function(){ play(); };
+						document.getElementById("PlayButton").style.color = "#000";
+						state = 7;
+						break;
+					case 7: // check war winner
+						if (cDeck[cDeck.length - (1 + compWarPick)].value > pDeck[pDeck.length - (1 + playerWarPick)].value) {
+							write("CStatus" + compWarPick, "Win");
+							write("PStatus" + playerWarPick, "Lose");
+							state = 8;
+						} else if (pDeck[pDeck.length - (1 + playerWarPick)].value > cDeck[cDeck.length - (1 + compWarPick)].value) {
+							write("CStatus" + compWarPick, "Lose");
+							write("PStatus" + playerWarPick, "Win");
+							state = 9;
+						} else {
+							write("CStatus" + compWarPick, "WAR!!!");
+							write("PStatus" + playerWarPick, "WAR!!!");
+							state = 5;
+						}
+						break;
+					case 8: //Computer War Win
+						for (var i = 0; i < 4; i++) {
+							cDeck.insert(0, cDeck.pop());
+							cDeck.insert(0, pDeck.pop());
+						};
+						cleanWar();
+						resetValues();
+						state = 0;
+						numWar = 0;
+						break;
+					case 9: //Player War Win
+						for (var i = 0; i < 4; i++) {
+							pDeck.insert(0, cDeck.pop());
+							pDeck.insert(0, pDeck.pop());
+						};
+						cleanWar();
+						resetValues();
+						state = 0;
+						numWar = 0;
+						break;
+				}
+				if (cDeck.length == 0) {
+					alert("Congrats! You won!");
+				} else if (pDeck.length == 0) {
+					alert("Sad day! You lost!");
+				}
+			}
+
+			window.onload = function() {
+				for (var i = 0; i < 4; i++) {
+					for (var j = 1; j < 14; j++) {
+						mainDeck.push(newCard(i, j));
+					};
+				};
+
+				mainDeck = shuffle(mainDeck);
+
+				deal(mainDeck);
+
+				alert("Close window to start playing");
+
+				play();
+			};
+
+			function testDeck() {
+				var max = numWar * 3;
+				var rand = Math.floor((Math.random() * max) + 1);
+				document.getElementById("TestButton").innerHTML = rand + ", " + max;
+			}
+
+			function autoplay() {
+				if (state != 5) {
+					play();
+					setTimeout(autoplay, 100);
+				} else {
+					play();
+				}
+			}
+
+			function war(pick) {
+				write("PCardValue" + pick, pDeck[pDeck.length - (1 + pick)].face);
+				write("PCardSuit" + pick, pDeck[pDeck.length - (1 + pick)].suit);
+				for (var i = numWar * 3 - 2; i < numWar * 3 + 1; i++) {
+					document.getElementById("PWarCard" + i).style.background = "#AAA";
+					document.getElementById("PWarCard" + i).onclick = null;
+				};
+				document.getElementById("PWarCard" + pick).style.background = "#FFF";
+				state = 6;
+				playerWarPick = pick;
+				play();
+			}
+		</script>
+	</head>
+	<body id="Main" style="text-align:center; ">
+		<h1>War</h1>
+		<div>
+			<h2>Computer</h2>	
+			<p>Deck: <span id="CDeckSize"></span></p>
+		</div>
+		<div id="MainCards">
+			<div id="ComputerCard" class="card">
+				<div>
+					<span id="CCardValue"></span> <span id="CCardSuit"></span>
+				</div>
+				<div id="CStatus">
+					
+				</div>
+			</div>
+			<div id="PlayerCard" class="card">
+				<div>
+					<span id="PCardValue"></span> <span id="PCardSuit"></span>
+				</div>
+				<div id="PStatus">
+					
+				</div>
+			</div>
+		</div>
+		<div id="PlayerDiv" style="clear: both; ">
+			<h2>Player</h2>
+			<p>Deck: <span id="PDeckSize"></span></p>
+			<button id="PlayButton" onclick="play()">Play Card</button>
+		</div>
+		<button onclick="autoplay()">Auto Play</button>
+	</body>
+</html>
